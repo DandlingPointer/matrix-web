@@ -1,0 +1,17 @@
+.matrix-transition-enter {
+    opacity: 0.01;
+    transition: opacity .5s ease-in;
+}
+
+.matrix-transition-enter.matrix-transition-enter-active {
+    opacity: 1;
+}
+
+.matrix-transition-leave {
+    opacity: 1;
+    transition: opacity .5s ease-in;
+}
+
+.matrix-transition-leave.matrix-transition-leave-active {
+    opacity: 0.01;
+}

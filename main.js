@@ -2,6 +2,8 @@
  * Created by vogelsang on 17.11.2014.
  */
 
+var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
+
 var Matrix = React.createClass({
     getInitialState: function() {
         var size = 3,
@@ -24,7 +26,7 @@ var Matrix = React.createClass({
     },
     createCell: function(x, y) {
         return (
-            <td key={x+"|"+y}>
+            <td  key={x+"|"+y}>
                 <input pattern="[0-9]+" class="matrix-cell" type="text"
                     value={this.state.data[x][y]} onChange={this.onCellChangeFactory(x, y)} size="5">
                 </input>
@@ -61,13 +63,17 @@ var Matrix = React.createClass({
             for (var y = 0; y < size; y = y + 1) {
                 elemRow.push(this.createCell(x, y));
             }
-            matrix.push(<tr key={"row"+x}> {elemRow} </tr>);
+            matrix.push(<tr> {elemRow} </tr>);
         }
         return (
             <div class="matrix">
                 <form>
                 <table class="matrix-table">
-                    <tbody> {matrix} </tbody>
+                    <tbody>
+                        <ReactCSSTransitionGroup transitionName="matrix-transition">
+                            {matrix}
+                        </ReactCSSTransitionGroup>
+                    </tbody>
                 </table>
                 <input type="text" title="Enter the size" pattern="[0-9]+" value={this.state.size} onChange={this.onSizeChange}/>
                 </form>
