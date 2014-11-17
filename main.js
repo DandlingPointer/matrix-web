@@ -1,8 +1,10 @@
 /**
  * Created by vogelsang on 17.11.2014.
  */
-
-var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
+var config = {
+    //max size a matrix can have, if too high, ui will lag and be bloated
+    maxSize: 10
+}
 
 var Matrix = React.createClass({
     getInitialState: function() {
@@ -17,19 +19,18 @@ var Matrix = React.createClass({
         return {size: size, data: data};
     },
 
-    onCellChangeFactory: function(x, y) {
-        return function(e) {
-            var matrix = this.state.data;
-            matrix[x][y] = e.target.value;
-            this.setState({data: matrix});
-        };
+    onCellChange: function(e) {
+        var matrix = this.state.data,
+            x = e.target.getAttribute("data-x"),
+            y = e.target.getAttribute("data-y");
+        matrix[x][y] = e.target.value;
+        this.setState({data: matrix});
     },
     createCell: function(x, y) {
         return (
-            <td  key={x+"|"+y}>
-                <input pattern="[0-9]+" class="matrix-cell" type="text"
-                    value={this.state.data[x][y]} onChange={this.onCellChangeFactory(x, y)} size="5">
-                </input>
+            <td key={x+"|"+y}>
+                <input data-x={x} data-y={y} class="matrix-cell" type="text"
+                    value={this.state.data[x][y]} onChange={this.onCellChange}/>
             </td>
         );
     },
@@ -39,8 +40,8 @@ var Matrix = React.createClass({
             oldSize = this.state.size,
             oldData = this.state.data;
 
-        if (isNaN(size) || size < 1 || size > 10) { //FIXME: isNaN is potentially broken, think of something better
-            return;
+        if (isNaN(size) || size < 1 || size > config.maxSize) { //FIXME: isNaN is potentially broken, think of something better
+            size = 1;
         }
 
         for (var x = 0; x < size; x++) {
@@ -63,19 +64,18 @@ var Matrix = React.createClass({
             for (var y = 0; y < size; y = y + 1) {
                 elemRow.push(this.createCell(x, y));
             }
-            matrix.push(<tr> {elemRow} </tr>);
+            matrix.push(<tr>{elemRow}</tr>);
         }
+
         return (
             <div class="matrix">
                 <form>
-                <table class="matrix-table">
-                    <tbody>
-                        <ReactCSSTransitionGroup transitionName="matrix-transition">
+                    <table class="matrix-table">
+                        <tbody>
                             {matrix}
-                        </ReactCSSTransitionGroup>
-                    </tbody>
-                </table>
-                <input type="text" title="Enter the size" pattern="[0-9]+" value={this.state.size} onChange={this.onSizeChange}/>
+                        </tbody>
+                    </table>
+                    <input type="text" title="Enter the size" pattern="[0-9]+" value={this.state.size} onChange={this.onSizeChange}/>
                 </form>
             </div>
         );
