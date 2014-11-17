@@ -6,6 +6,30 @@ var config = {
     maxSize: 10
 }
 
+var DisplayMatrix = React.createClass({
+    render: function() {
+        var matrix = [],
+            size = this.props.size;
+        for (var x = 0; x < size; x = x + 1) {
+            var elemRow = [];
+            for (var y = 0; y < size; y = y + 1) {
+                elemRow.push(<td key={x+"|"+y}>{this.props.data[x][y]}</td>);
+            }
+            matrix.push(<tr>{elemRow}</tr>);
+        }
+
+        return (
+            <div className="matrix">
+                    <table className="matrix-table">
+                        <tbody>
+                            {matrix}
+                        </tbody>
+                    </table>
+            </div>
+        );
+    }
+});
+
 var Matrix = React.createClass({
     getInitialState: function() {
         var size = 3,
@@ -80,11 +104,33 @@ var Matrix = React.createClass({
             </div>
         );
     }
+});
 
-
-}, 500);
+var MatrixApp = React.createClass({
+    getInitialState: function() {
+        return {operator: "+"};
+    },
+    onOperatorChange: function(e) {
+        this.setState({operator: e.target.value});
+    },
+    render: function() {
+        return (
+            <div id="matrix-app">
+                <Matrix/>
+                <select onChange={this.onOperatorChange} value={this.state.operator}>
+                    <option value="+">+</option>
+                    <option value="-">-</option>
+                    <option value="*">*</option>
+                </select>
+                <Matrix/>
+                =
+                <DisplayMatrix/>
+            </div>
+        );
+    }
+});
 
 React.render(
-    <Matrix/>,
+    <MatrixApp />,
     document.getElementById("content")
 );
