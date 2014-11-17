@@ -29,7 +29,7 @@ var Matrix = React.createClass({
     createCell: function(x, y) {
         return (
             <td key={x+"|"+y}>
-                <input data-x={x} data-y={y} class="matrix-cell" type="text"
+                <input data-x={x} data-y={y} className="matrix-cell" type="text"
                     value={this.state.data[x][y]} onChange={this.onCellChange}/>
             </td>
         );
@@ -41,7 +41,7 @@ var Matrix = React.createClass({
             oldData = this.state.data;
 
         if (isNaN(size) || size < 1 || size > config.maxSize) { //FIXME: isNaN is potentially broken, think of something better
-            size = 1;
+            return
         }
 
         for (var x = 0; x < size; x++) {
@@ -68,14 +68,14 @@ var Matrix = React.createClass({
         }
 
         return (
-            <div class="matrix">
+            <div className="matrix">
                 <form>
-                    <table class="matrix-table">
+                    <table className="matrix-table">
                         <tbody>
                             {matrix}
                         </tbody>
                     </table>
-                    <input type="text" title="Enter the size" pattern="[0-9]+" value={this.state.size} onChange={this.onSizeChange}/>
+                    Size: <input className="size-select" type="text" title="Enter the size" value={this.state.size} onChange={this.onSizeChange}/>
                 </form>
             </div>
         );
