@@ -20,12 +20,10 @@ var calculator = {
         switch (operator) {
             case "+":
                 return this.add(size, dataM1, dataM2, dataM3);
-                break;
             case "*":
                 return this.multiply(size, dataM1, dataM2, dataM3);
-                break;
-
-
+            case "transpose":
+                return this.transpose(size, dataM1, dataM3);
             default:
                 console.error("Unsupported operation! ("+operator+")");
                 return dataM3;
@@ -50,6 +48,15 @@ var calculator = {
                     cellResult += Number(dataM1[x][i]) * Number(dataM2[i][y]);
                 }
                 dataM3[x][y] = cellResult;
+            }
+        }
+        return dataM3;
+    },
+
+    transpose: function(size, dataM1, dataM3) {
+        for (var x = 0; x < size; x++) {
+            for (var y = 0; y < size; y++) {
+                dataM3[x][y] = dataM1[y][x];
             }
         }
         return dataM3;
