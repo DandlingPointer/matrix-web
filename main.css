@@ -1,5 +1,13 @@
+body {
+    font-family: 'Open Sans', sans-serif;
+}
+
 .matrix-cell {
     width: 20px;
+}
+
+.error {
+    color: red;
 }
 
 .size-select {

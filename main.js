@@ -8,65 +8,86 @@ var config = {
     defaultOperator: "+"
 }
 
+//FIXME orientation counter-intuitive: y = horizontal axis, x = vertical axis
 var calculator = {
     isUnaryOperator(operator) {
         return operator === "transpose" || operator === "invert";
     },
 
     isScalarOperation(operator) {
-        return operator === "scalar multiplication";
+        return operator === "*-scalar";
     },
-    calculate: function(operator, size, dataM1, dataM2, dataM3) {
-        switch (operator) {
+    calculate: function(state) {
+        switch (state.operator) {
             case "+":
-                return this.add(size, dataM1, dataM2, dataM3);
+                if (state.dataM1.length != state.dataM2.length || state.dataM1[0].length != state.dataM2[0].length) {
+                    return "For matrix addition, both matrices need to be of the same type (i.e. size)";
+                }
+                return this.add(state.dataM1, state.dataM2);
             case "*":
-                return this.multiply(size, dataM1, dataM2, dataM3);
+                if (state.dataM1[0].length != state.dataM2.length) {
+                    return "For matrix multiplication, height of matrix 1 needs to be equal with the width of matrix 2";
+                }
+                return this.multiply(state.dataM1, state.dataM2);
+            case "*-scalar":
+                return this.multiplyScalar(state.dataM1, state.scalar);
             case "transpose":
-                return this.transpose(size, dataM1, dataM3);
+                return this.transpose(state.dataM1);
             default:
-                console.error("Unsupported operation! ("+operator+")");
-                return dataM3;
+                return "Unsupported operation! ("+state.operator+")";
         }
     },
 
-    add: function(size, dataM1, dataM2, dataM3) {
-        for (var x = 0; x < size; x++) {
-            for (var y = 0; y < size; y++) {
-                dataM3[x][y] = Number(dataM1[x][y]) + Number(dataM2[x][y]);
+    add: function(dataM1, dataM2) {
+        var result = this.createMatrixData(dataM1[0].length, dataM1.length, undefined);
+        for (var x = 0; x < result.length; x++) {
+            for (var y = 0; y < result[0].length; y++) {
+                result[x][y] = Number(dataM1[x][y]) + Number(dataM2[x][y]);
             }
         }
-        return dataM3;
+        return result;
     },
 
-    multiply: function(size, dataM1, dataM2, dataM3) {
-        var cellResult;
-        for (var x = 0; x < size; x++) {
-            for (var y = 0; y < size; y++) {
+    multiplyScalar: function(dataM1, scalar) {
+        var result = this.createMatrixData(dataM1.length, dataM1[0].length, undefined);
+        for (var x = 0; x < result.length; x++) {
+            for (var y = 0; y < result[0].length; y++) {
+                result[x][y] = dataM1[x][y] * scalar;
+            }
+        }
+        return result;
+    },
+
+    multiply: function(dataM1, dataM2) {
+        var result = this.createMatrixData(dataM2[0].length, dataM1.length, undefined),
+            cellResult;
+        for (var x = 0; x < result.length; x++) {
+            for (var y = 0; y < result[0].length; y++) {
                 cellResult = 0;
-                for (var i = 0; i < size; i++) {
+                for (var i = 0; i < dataM1[0].length; i++) {
                     cellResult += Number(dataM1[x][i]) * Number(dataM2[i][y]);
                 }
-                dataM3[x][y] = cellResult;
+                result[x][y] = cellResult;
             }
         }
-        return dataM3;
+        return result;
     },
 
-    transpose: function(size, dataM1, dataM3) {
-        for (var x = 0; x < size; x++) {
-            for (var y = 0; y < size; y++) {
-                dataM3[x][y] = dataM1[y][x];
+    transpose: function(dataM1) {
+        var result = this.createMatrixData(dataM1.length, dataM1[0].length, undefined);
+        for (var x = 0; x < result.length; x++) {
+            for (var y = 0; y < result[0].length; y++) {
+                result[x][y] = dataM1[y][x];
             }
         }
-        return dataM3;
+        return result;
     },
-    createMatrixData: function(size, oldSize, oldData) {
+    createMatrixData: function(width, height, oldData) {
         var data = [];
-        for (var x = 0; x < size; x++) {
+        for (var x = 0; x < height; x++) {
             data[x] = [];
-            for (var y = 0; y < size; y++) {
-                if (x < oldSize && y < oldSize) {
+            for (var y = 0; y < width; y++) {
+                if (typeof oldData !== "undefined" && x < oldData.length && y < oldData[0].length) {
                     data[x][y] = oldData[x][y];
                 } else {
                     data[x][y] = 0;
@@ -94,12 +115,10 @@ var Matrix = React.createClass({
         }
     },
     render: function() {
-        var matrix = [],
-            size = this.props.size;
-
-        for (var x = 0; x < size; x = x + 1) {
+        var matrix = [];
+        for (var x = 0; x < this.props.data.length; x = x + 1) {
             var elemRow = [];
-            for (var y = 0; y < size; y = y + 1) {
+            for (var y = 0; y < this.props.data[0].length; y = y + 1) {
                 elemRow.push(this.createCell(x, y, this.props.data[x][y], this.props.onChange, this.props.input));
             }
             matrix.push(<tr>{elemRow}</tr>);
@@ -121,91 +140,121 @@ var MatrixApp = React.createClass({
     getInitialState: function() {
         return {
             operator: config.defaultOperator,
-            size: config.defaultSize,
-            dataM1: calculator.createMatrixData(config.defaultSize, -1, null),
-            dataM2: calculator.createMatrixData(config.defaultSize, -1, null),
-            dataM3: calculator.createMatrixData(config.defaultSize, -1, null)
+            dataM1: calculator.createMatrixData(config.defaultSize, config.defaultSize, undefined),
+            dataM2: calculator.createMatrixData(config.defaultSize, config.defaultSize, undefined),
+            dataM3: calculator.createMatrixData(config.defaultSize, config.defaultSize, undefined),
+            scalar: 0,
+            error: ""
         };
     },
 
     onOperatorChange: function(e) {
-        this.setState({
-            operator: e.target.value,
-            dataM3: calculator.calculate(
-                e.target.value,
-                this.state.size,
-                this.state.dataM1,
-                this.state.dataM2,
-                this.state.dataM3)
-        });
+        var newState = this.state;
+        newState.operator = e.target.value;
+        newState.dataM3 = calculator.calculate(newState);
+        this.setState(newState);
     },
 
-    onMatrixChange1: function(e) { //TODO merge onMatrixChange 1 and 2 with closure
-        var matrix = this.state.dataM1,
-            x = e.target.getAttribute("data-x"),
-            y = e.target.getAttribute("data-y");
-        matrix[x][y] = e.target.value;
-        this.setState({
-            dataM1: matrix,
-            dataM3: calculator.calculate(
-                this.state.operator,
-                this.state.size, matrix,
-                this.state.dataM2,
-                this.state.dataM3)
-        });
+    onSizeChangeFactory: function(type, matrixNum) {
+        return function(e) {
+            var oldMatrix = this.state["dataM"+matrixNum],
+                width, height, newMatrix, newState = this.state,
+                value = e.target.value;
+            if (isNaN(value) || value < 1) {
+                value = 1;
+            }
+            if (type === "width") {
+                width = value;
+                height = oldMatrix.length;
+            } else {
+                height = value;
+                width = oldMatrix[0].length;
+            }
+            newMatrix = calculator.createMatrixData(width, height, oldMatrix);
+            newState["dataM"+matrixNum] = newMatrix;
+            newState.dataM3 = calculator.calculate(newState);
+            this.setState(newState);
+        }.bind(this);
     },
-    onMatrixChange2: function(e) {
-        var matrix = this.state.dataM2,
-            x = e.target.getAttribute("data-x"),
-            y = e.target.getAttribute("data-y");
-        matrix[x][y] = e.target.value;
-        this.setState({
-            dataM2: matrix,
-            dataM3: calculator.calculate(
-                this.state.operator,
-                this.state.size,
-                this.state.dataM1,
-                matrix,
-                this.state.dataM3)
-        });
+
+    onMatrixChangeFactory: function (matrixNum) {
+        return function(e) {
+            var matrix = this.state["dataM"+matrixNum],
+                x = e.target.getAttribute("data-x"),
+                y = e.target.getAttribute("data-y"),
+                newState = this.state;
+            matrix[x][y] = e.target.value;
+            newState["dataM"+matrixNum];
+            newState.dataM3 = calculator.calculate(newState);
+            this.setState(newState);
+        }.bind(this);
     },
-    onSizeChange: function(e) {
-        var size = e.target.value;
-        var dataM1 = calculator.createMatrixData(size, this.state.size, this.state.dataM1);
-        var dataM2 = calculator.createMatrixData(size, this.state.size, this.state.dataM2);
-        var dataM3 = calculator.createMatrixData(size, -1, null)
-        dataM3 = calculator.calculate(this.state.operator, size, dataM1, dataM2, dataM3);
-        this.setState({
-            dataM1: dataM1,
-            dataM2: dataM2,
-            dataM3: dataM3,
-            size: size
-        });
+
+    onScalarChange: function(e) {
+        var newState = this.state;
+        newState.scalar = e.target.value;
+        newState.dataM3 = calculator.calculate(newState);
+        this.setState(newState);
     },
 
     render: function() {
-        var matrix1 = <Matrix className="matrix-input" input={true} size={this.state.size} data={this.state.dataM1} onChange={this.onMatrixChange1}/>,
+        var matrix1,
             matrix2,
-            matrix3 = <Matrix className="matrix-result" input={false} size={this.state.size} data={this.state.dataM3}/>;
-        if (calculator.isUnaryOperator(this.state.operator)) {
-            matrix2 = <br/>;
-        } else {
-            matrix2 = <Matrix className="matrix-input" input={true} size={this.state.size} data={this.state.dataM2} onChange={this.onMatrixChange2}/>;
-        }
+            matrix3;
+        matrix1 = (
+            <div>
+                Width:
+                <input className="size-select" type="text" title="Enter the size" value={this.state.dataM1[0].length}
+                    onChange={this.onSizeChangeFactory("width", 1)}/>
+                Height:
+                <input className="size-select" type="text" title="Enter the size" value={this.state.dataM1.length}
+                    onChange={this.onSizeChangeFactory("height", 1)}/>
+                <Matrix className="matrix-input" input={true} data={this.state.dataM1} onChange={this.onMatrixChangeFactory(1)}/>
+            </div>);
 
+        if (calculator.isUnaryOperator(this.state.operator)) {
+            matrix2 = "";
+        } else if (calculator.isScalarOperation(this.state.operator)) {
+            matrix2 = <input className="matrix-cell" type="text"
+                value={this.state.scalar} onChange={this.onScalarChange}/>;
+        } else {
+            matrix2 = (
+                <div>
+                Width:
+                <input className="size-select" type="text" title="Enter the size" value={this.state.dataM2[0].length}
+                    onChange={this.onSizeChangeFactory("width", 2)}/>
+                Height:
+                <input className="size-select" type="text" title="Enter the size" value={this.state.dataM2.length}
+                    onChange={this.onSizeChangeFactory("height", 2)}/>
+                <Matrix className="matrix-input" input={true} data={this.state.dataM2} onChange={this.onMatrixChangeFactory(2)}/>
+                </div>
+            );
+        }
+        if (typeof this.state.dataM3 === "string") {
+            matrix3 = <p className="error"> {this.state.dataM3} </p>
+        } else {
+            matrix3 = <Matrix className="matrix-result" input={false} data={this.state.dataM3}/>;
+        }
         return (
             <div id="matrix-app">
-                Size: <input className="size-select" type="text" title="Enter the size" value={this.state.size} onChange={this.onSizeChange}/>
-                {matrix1}
+                <div className="matrix-container">
+                    {matrix1}
+                </div>
+                <br/>
                 <select className="operator-select" onChange={this.onOperatorChange} value={this.state.operator}>
                     <option value="+">+</option>
                     <option value="*">*</option>
+                    <option value="*-scalar">* (scalar)</option>
                     <option value="transpose">transpose</option>
                     <option value="invert">invert</option>
                 </select>
-                {matrix2}
+                <div className="matrix-container">
+                    {matrix2}
+                </div>
                 =
-                {matrix3}
+                <div className="matrix-container">
+                    {matrix3}
+                </div>
             </div>
         );
     }
