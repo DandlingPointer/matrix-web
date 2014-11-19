@@ -4,6 +4,22 @@ body {
 
 .matrix-cell {
     width: 20px;
+    background-color: #FFFFFF;
+    border: solid;
+    border-width: 1px;
+    border-color: #000000;
+    border-radius: 5px;
+    padding: 5px;
+}
+
+.card {
+    background-color: #FFFFFF;
+    border: solid;
+    border-width: 1px;
+    border-color: #000000;
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px;
 }
 
 .error {

@@ -110,7 +110,7 @@ var Matrix = React.createClass({
             );
         } else {
             return (
-                <td key={x+"|"+y}>{data}</td>
+                <td className="matrix-cell" key={x+"|"+y}>{data}</td>
             );
         }
     },
@@ -202,7 +202,7 @@ var MatrixApp = React.createClass({
             matrix2,
             matrix3;
         matrix1 = (
-            <div>
+            <div className="card">
                 Width:
                 <input className="size-select" type="text" title="Enter the size" value={this.state.dataM1[0].length}
                     onChange={this.onSizeChangeFactory("width", 1)}/>
@@ -219,7 +219,7 @@ var MatrixApp = React.createClass({
                 value={this.state.scalar} onChange={this.onScalarChange}/>;
         } else {
             matrix2 = (
-                <div>
+                <div className="card">
                 Width:
                 <input className="size-select" type="text" title="Enter the size" value={this.state.dataM2[0].length}
                     onChange={this.onSizeChangeFactory("width", 2)}/>
@@ -231,30 +231,29 @@ var MatrixApp = React.createClass({
             );
         }
         if (typeof this.state.dataM3 === "string") {
-            matrix3 = <p className="error"> {this.state.dataM3} </p>
+            matrix3 = <p className="error card"> {this.state.dataM3} </p>
         } else {
-            matrix3 = <Matrix className="matrix-result" input={false} data={this.state.dataM3}/>;
+            matrix3 = (
+                <div className="card">
+                <Matrix className="matrix-result" input={false} data={this.state.dataM3}/>
+                </div>
+            );
         }
         return (
             <div id="matrix-app">
-                <div className="matrix-container">
-                    {matrix1}
-                </div>
-                <br/>
-                <select className="operator-select" onChange={this.onOperatorChange} value={this.state.operator}>
+                {matrix1}
+                <select className="card" onChange={this.onOperatorChange} value={this.state.operator}>
                     <option value="+">+</option>
                     <option value="*">*</option>
                     <option value="*-scalar">* (scalar)</option>
                     <option value="transpose">transpose</option>
                     <option value="invert">invert</option>
                 </select>
-                <div className="matrix-container">
-                    {matrix2}
-                </div>
+                {matrix2}
+                <div className="card">
                 =
-                <div className="matrix-container">
-                    {matrix3}
                 </div>
+                {matrix3}
             </div>
         );
     }
